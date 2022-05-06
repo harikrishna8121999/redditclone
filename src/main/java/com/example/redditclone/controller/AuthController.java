@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.redditclone.dto.AuthenticationResponse;
+import com.example.redditclone.dto.LoginRequest;
 import com.example.redditclone.dto.RegisterRequest;
 import com.example.redditclone.service.AuthService;
 
@@ -29,6 +31,11 @@ public class AuthController {
 	    public ResponseEntity signup(@RequestBody RegisterRequest registerRequest) {
 	        authService.signup(registerRequest);
 	        return new ResponseEntity(OK);
+	    }
+	    
+	    @PostMapping("/login")
+	    public AuthenticationResponse login(@RequestBody LoginRequest loginRequest) {
+	        return authService.login(loginRequest);
 	    }
 	    
 	    @GetMapping("accountVerification/{token}")
