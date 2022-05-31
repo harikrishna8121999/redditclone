@@ -2,11 +2,14 @@ package com.example.redditclone.service;
 
 import java.util.List;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.redditclone.dto.SubredditDto;
+import com.example.redditclone.exception.SpringRedditException;
 import com.example.redditclone.exception.SubredditNotFoundException;
+
 import com.example.redditclone.model.SubReddit;
 import com.example.redditclone.repository.SubredditRepository;
 
@@ -19,42 +22,27 @@ import static java.util.stream.Collectors.toList;
 public class SubredditService {
 	
 	private final SubredditRepository subredditRepository;
-    private final AuthService authService;
+	
+	private ModelMapper modelmapper;
+
+    @Transactional
+    public SubredditDto save(SubredditDto subredditDto) {
+        SubReddit save = subredditRepository.save(modelmapper.map(subredditDto, SubReddit.class));
+        subredditDto.setId(save.getId());
+        return subredditDto;
+    }
 
     @Transactional(readOnly = true)
     public List<SubredditDto> getAll() {
         return subredditRepository.findAll()
                 .stream()
-                .map(this::mapToDto)
+                .map(subReddit -> modelmapper.map(subReddit, SubredditDto.class))
                 .collect(toList());
     }
 
-    @Transactional
-    public SubredditDto save(SubredditDto subredditDto) {
-        SubReddit subreddit = subredditRepository.save(mapToSubreddit(subredditDto));
-        subredditDto.setId(subreddit.getId());
-        return subredditDto;
-    }
-
-    @Transactional(readOnly = true)
     public SubredditDto getSubreddit(Long id) {
         SubReddit subreddit = subredditRepository.findById(id)
-                .orElseThrow(() -> new SubredditNotFoundException("Subreddit not found with id -" + id));
-        return mapToDto(subreddit);
+                .orElseThrow(() -> new SpringRedditException("No subreddit found with ID - " + id));
+        return modelmapper.map(subreddit, SubredditDto.class);
     }
-
-    private SubredditDto mapToDto(SubReddit subreddit) {
-        return SubredditDto.builder().name(subreddit.getName())
-                .id(subreddit.getId())
-                .postCount(subreddit.getPosts().size())
-                .build();
-    }
-
-    private SubReddit mapToSubreddit(SubredditDto subredditDto) {
-        return SubReddit.builder().name("/r/" + subredditDto.getName())
-                .description(subredditDto.getDescription())
-                .user(authService.getCurrentUser())
-                .createdDate(now()).build();
-    }
-
 }
